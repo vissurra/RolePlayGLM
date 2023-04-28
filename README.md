@@ -26,23 +26,22 @@
     $ pip install -r requirements.txt
     ```
 
-2. 构造数据集
+2. 训练模型
+   > 可以删除 [train_instruction.sh](train_instruction.sh) 中的```--quantization_bit```参数，不使用量化。
     ```shell
+    # 构造数据集
     $ python dataset.py
-    ```
-
-3. 训练模型
-   > 可以删除[train_instruction.sh](train_instruction.sh)中的```--quantization_bit```参数，不使用量化。
-    ```shell
+    # 训练
     $ bash train_instruction.sh
     ```
+   从 [Google Drive](https://drive.google.com/file/d/1ZwVht3TVn4GDQ_oxuyQlVP09I7IUmnW6/view?usp=share_link) 下载已经训练的权重文件，放在 [ckpt](ckpt) 目录下，跳过此步骤。
 
-4. 运行
+3. 运行
     ```shell
     $ bash web_demo.sh
     ```
 
-5. 访问
+4. 访问
     <br> 浏览器直接打开 [http://127.0.0.1:8000](http://127.0.0.1:8000)
 
 ## 硬件（训练）
