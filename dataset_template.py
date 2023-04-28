@@ -76,7 +76,7 @@ class Template:
             favorites='、'.join(self.character.favorite),
             creator=self.creator.name
         )
-        instruction += f'\n现在你正在和一个名叫"{chat_username}"聊天。\n明白了你就回复"明白了。"'
+        instruction += f'\n现在你正在和一个名叫"{chat_username}"的人聊天。\n明白了你就回复"明白了。"'
 
         return [
             [instruction, '明白了。']
