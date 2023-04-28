@@ -7,7 +7,7 @@ CHAT_VAL_DATA=${FOLDER}/valid.json
 
 CHECKPOINT_NAME=ckpt/role-play-chatglm-6b-pt-${PRE_SEQ_LEN}-${LR}
 
-CUDA_VISIBLE_DEVICES=0 python3 ChatGLM-6B/ptuning/main.py \
+CUDA_VISIBLE_DEVICES=0 python3 chatglm_6b/ptuning/main.py \
     --do_train \
     --train_file $CHAT_TRAIN_DATA \
     --validation_file $CHAT_VAL_DATA \
@@ -24,9 +24,10 @@ CUDA_VISIBLE_DEVICES=0 python3 ChatGLM-6B/ptuning/main.py \
     --per_device_eval_batch_size 1 \
     --gradient_accumulation_steps 16 \
     --predict_with_generate \
-    --max_steps 200 \
+    --max_steps 100 \
     --logging_steps 10 \
     --save_steps 50 \
     --learning_rate $LR \
-    --pre_seq_len $PRE_SEQ_LEN
+    --pre_seq_len $PRE_SEQ_LEN \
+    --quantization_bit 4
 
