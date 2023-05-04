@@ -24,7 +24,7 @@
 1. 安装依赖
     ```shell
     # 安装ChatGLM-6B所需依赖
-    $ pip install -r ChatGLM-6B/requirements.txt
+    $ pip install -r chatglm_6b/requirements.txt
     # 安装ptuning依赖
     $ pip install rouge_chinese nltk jieba datasets
     # 安装本项目所需依赖
@@ -47,7 +47,7 @@
     ```
 
 4. 访问
-    <br> 浏览器直接打开 [http://127.0.0.1:8000](http://127.0.0.1:8000)
+    <br> 浏览器直接打开 [http://127.0.0.1:7860](http://127.0.0.1:7860)
 
 ## 硬件
 
