@@ -2,7 +2,6 @@ import os
 import sys
 
 import gradio as gr
-import mdtex2html
 import torch
 from transformers import (
     AutoConfig,
@@ -11,148 +10,25 @@ from transformers import (
     HfArgumentParser,
 )
 
+from ui import chat, knowledge
+
 folder_path = os.path.abspath('chatglm_6b')
 sys.path.append(folder_path)
 
-from chatglm_6b.ptuning.arguments import ModelArguments
 
-model = None
-tokenizer = None
-
-"""Override Chatbot.postprocess"""
-
-
-def postprocess(self, y):
-    if y is None:
-        return []
-    for i, (message, response) in enumerate(y):
-        y[i] = (
-            None if message is None else mdtex2html.convert((message)),
-            None if response is None else mdtex2html.convert(response),
-        )
-    return y
-
-
-gr.Chatbot.postprocess = postprocess
-
-
-def parse_text(text):
-    """copy from https://github.com/GaiZhenbiao/ChuanhuChatGPT/"""
-    lines = text.split("\n")
-    lines = [line for line in lines if line != ""]
-    count = 0
-    for i, line in enumerate(lines):
-        if "```" in line:
-            count += 1
-            items = line.split('`')
-            if count % 2 == 1:
-                lines[i] = f'<pre><code class="language-{items[-1]}">'
-            else:
-                lines[i] = f'<br></code></pre>'
-        else:
-            if i > 0:
-                if count % 2 == 1:
-                    line = line.replace("`", "\`")
-                    line = line.replace("<", "&lt;")
-                    line = line.replace(">", "&gt;")
-                    line = line.replace(" ", "&nbsp;")
-                    line = line.replace("*", "&ast;")
-                    line = line.replace("_", "&lowbar;")
-                    line = line.replace("-", "&#45;")
-                    line = line.replace(".", "&#46;")
-                    line = line.replace("!", "&#33;")
-                    line = line.replace("(", "&#40;")
-                    line = line.replace(")", "&#41;")
-                    line = line.replace("$", "&#36;")
-                lines[i] = "<br>" + line
-    text = "".join(lines)
-    return text
-
-
-instruction = ''
-
-
-def build_instruction(name, gender, birthday, creator, favorites, chat_to, history):
-    instruction = f'''你是一个生活在虚拟世界里的人工智能，以下是你的基本信息。
-姓名:{name}
-性别:{gender}
-生日:{birthday}
-兴趣爱好:{favorites}
-创造者姓名:{creator}
-现在你正在和一个名叫"{chat_to}"的人聊天。
-明白了你就回复"明白了。"'''
-    init_history = [[
-        instruction,
-        '明白了。'
-    ]]
-
-    if len(history) >= 6:
-        history = history[-5:]
-    history = init_history + history[1:]
-    return history
-
-
-def predict(input, chatbot, max_length, top_p, temperature, history):
-    chatbot.append((parse_text(input), ""))
-    for response, history in model.stream_chat(tokenizer, input, history, max_length=max_length, top_p=top_p,
-                                               temperature=temperature):
-        chatbot[-1] = (parse_text(input), parse_text(response))
-
-        yield chatbot, history
-
-
-def reset_user_input():
-    return gr.update(value='')
-
-
-def reset_state():
-    return [], []
-
-
-with gr.Blocks() as demo:
-    gr.HTML("""<h1 align="center">RolePlayGLM</h1>""")
-
-    with gr.Row():
-        with gr.Column(scale=4):
-            name = gr.Textbox('Dio', label='Name', placeholder="Dio")
-        with gr.Column(scale=4):
-            gender = gr.Textbox('男', label='Gender', placeholder="男")
-        with gr.Column(scale=4):
-            birthday = gr.Textbox('1月1日', label='Birthday', placeholder="1月1日")
-        with gr.Column(scale=4):
-            creator = gr.Textbox('无敌的卖鱼强', label='Creator Name', placeholder="无敌的卖鱼强")
-    favorites = gr.Textbox("吃面包、关在房间里、扛压路机、戳脑门", label='Favorites',
-                           placeholder="吃面包、关在房间里、扛压路机、戳脑门")
-
-    with gr.Row():
-        with gr.Column(scale=10):
-            chatbot = gr.Chatbot().style(height=600)
-        with gr.Column(scale=4):
-            chat_to = gr.Textbox("无敌的卖鱼强", label='Chat To', placeholder="无敌的卖鱼强")
-            user_input = gr.Textbox(show_label=False, placeholder="Input...", lines=7)
-            submitBtn = gr.Button("Submit", variant="primary")
-            emptyBtn = gr.Button("Clear History")
-            max_length = gr.Slider(0, 4096, value=2048, step=1.0, label="Maximum length", interactive=True)
-            top_p = gr.Slider(0, 1, value=0.7, step=0.01, label="Top P", interactive=True)
-            temperature = gr.Slider(0, 1, value=0.95, step=0.01, label="Temperature", interactive=True)
-
-    history = gr.State([])
-    submitBtn \
-        .click(build_instruction, [name, gender, birthday, creator, favorites, chat_to, history], [history]) \
-        .then(predict,
-              [user_input, chatbot, max_length, top_p, temperature, history],
-              [chatbot, history],
-              show_progress=True)
-    submitBtn.click(reset_user_input, [], [user_input])
-
-    emptyBtn.click(reset_state, outputs=[chatbot, history], show_progress=True)
+def ui(model, tokenizer):
+    with gr.Blocks() as demo:
+        gr.HTML("""<h1 align="center">RolePlayGLM</h1>""")
+        with gr.Tab('Chat'):
+            chat.ui(model, tokenizer)
+        with gr.Tab('Knowledge'):
+            knowledge.ui()
+    demo.queue().launch(share=False, inbrowser=True, server_name='0.0.0.0')
 
 
 def main():
-    global model, tokenizer
-
-    parser = HfArgumentParser((
-        ModelArguments))
+    from chatglm_6b.ptuning.arguments import ModelArguments
+    parser = HfArgumentParser((ModelArguments))
     if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
         # If we pass only one argument to the script and it's the path to a json file,
         # let's parse it to get our arguments.
@@ -190,7 +66,7 @@ def main():
         model.transformer.prefix_encoder.float().cuda()
 
     model = model.eval()
-    demo.queue().launch(share=False, inbrowser=True, server_name='0.0.0.0')
+    ui(model, tokenizer)
 
 
 if __name__ == "__main__":

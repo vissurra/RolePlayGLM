@@ -1,1 +1,4 @@
 loguru==0.7.0
+faiss-gpu
+sentence-transformers
+langchain
