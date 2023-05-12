@@ -9,16 +9,10 @@ from langchain.text_splitter import CharacterTextSplitter
 
 content_folder = 'data/content'
 knowledge_folder = 'data/knowledge'
-embedding_model_dict = {
-    "ernie-tiny": "nghuyong/ernie-3.0-nano-zh",
-    "ernie-base": "nghuyong/ernie-3.0-base-zh",
-    "text2vec-base": "shibing624/text2vec-base-chinese",
-    "text2vec": "/home/horder/workspaces/text2vec-large-chinese",
-}
+embedding_model = 'GanymedeNil/text2vec-large-chinese'
 embedding_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-embeddings = HuggingFaceEmbeddings(model_name=embedding_model_dict['text2vec'],
-                                   model_kwargs={'device': embedding_device})
+embeddings = HuggingFaceEmbeddings(model_name=embedding_model, model_kwargs={'device': embedding_device})
 
 chunk_size = 200
 chunk_overlap = 50

@@ -42,7 +42,7 @@ def ui():
             knowledge = gr.Dropdown(knowledge_list.value, value=knowledge_list.value[0], label='Select knowledge')
             knowledge_new = gr.Textbox('', placeholder='Input knowledge name', show_label=False)
             file = gr.File(file_types=['.txt'], show_label=False)
-            upload_btn = gr.Button('Upload')
+            upload_btn = gr.Button('Upload', variant='primary')
         with gr.Column(scale=10):
             content = gr.Textbox('', label='Content', lines=40)
 

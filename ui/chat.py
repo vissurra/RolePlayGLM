@@ -30,12 +30,17 @@ def refresh_knowledge(knowledge):
     return gr.update(choices=knowledge_list, value=knowledge)
 
 
-def query_docs(knowledge_vs, query):
+def query_docs(knowledge_vs, history, user_input, topk=1):
     if knowledge_vs is None:
         return None
-    docs_and_scores = knowledge_vs.similarity_search_with_score(query, k=1)
-    print(docs_and_scores)
-    return docs_and_scores[0][0].page_content
+    query = ' '.join([user for user, bot in history[-1:]] + [user_input])
+    logger.debug(f'Query: {query}')
+    docs_and_scores = knowledge_vs.similarity_search_with_score(query, k=topk)
+
+    docs = ''
+    for doc, score in docs_and_scores:
+        docs += doc.page_content
+    return docs
 
 
 def build_instruction(name, gender, birthday, creator, favorites, chat_to, doc, history):
@@ -48,17 +53,18 @@ def build_instruction(name, gender, birthday, creator, favorites, chat_to, doc, 
 现在你正在和一个名叫"{chat_to}"的人聊天。
 明白了你就回复"明白了。'''
     if doc is not None:
-        instruction += f'''\n###\n还有一些已知信息:{doc}"'''
+        instruction += f'''\n###\n{doc}'''
 
-    init_history = [[
-        instruction,
-        '明白了。'
-    ]]
-    print(instruction)
+    init_history = [
+        [instruction, '明白了。']
+    ]
 
-    if len(history) >= 3:
-        history = history[-3:]
-    history = init_history + history
+    if len(history) == 0:
+        history = init_history
+    elif len(history) <= 3:
+        history = init_history + history[1:]
+    else:
+        history = init_history + history[-3:]
     return history
 
 
@@ -96,13 +102,16 @@ def parse_text(text):
 
 
 def predict(user_input, chatbot, max_length, top_p, temperature, history):
-    logger.debug(f"User input: {user_input}")
+    logger.debug(f'User input: {user_input}')
     chatbot.append((parse_text(user_input), ""))
+
+    response = ''
     for response, history in model.stream_chat(tokenizer, user_input, history, max_length=max_length, top_p=top_p,
                                                temperature=temperature):
         chatbot[-1] = (parse_text(user_input), parse_text(response))
 
         yield chatbot, history
+    logger.debug(f'Response: {response}')
 
 
 def reset_user_input():
@@ -138,7 +147,7 @@ def ui(input_model, input_tokenizer):
 
     with gr.Row():
         with gr.Column(scale=10):
-            chatbot = gr.Chatbot().style(height=600)
+            chatbot = gr.Chatbot().style(height=700)
         with gr.Column(scale=4):
             # chat_to = gr.Textbox("无敌的卖鱼强", label='Chat To', placeholder="无敌的卖鱼强")
             with gr.Row():
@@ -155,7 +164,7 @@ def ui(input_model, input_tokenizer):
     refresh_btn.click(refresh_knowledge, [knowledge], [knowledge])
     submit_btn \
         .click(query_docs,
-               [knowledge_vs, user_input],
+               [knowledge_vs, history, user_input],
                [related_doc]) \
         .then(build_instruction,
               [name, gender, birthday, creator, favorites, creator, related_doc, history],

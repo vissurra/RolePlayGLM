@@ -6,17 +6,25 @@
 
 由于[ChatGLM-6B](https://github.com/THUDM/ChatGLM-6B)
 不支持instruction，所以在进行角色扮演任务时具有不稳定性。本项目通过模板生成超小语料数据集，使用[ptuning](https://github.com/THUDM/ChatGLM-6B/tree/main/ptuning)
-进行微调，实现角色扮演的效果。
+进行微调，实现角色扮演的效果。<br>
+📜 通过外挂知识库的方式进行角色背景设定。
 
 - Python 3.10
 
 ### 示例
 
+#### 基本信息问答
+
 ![demo](data/images/demo.png)
 
-## TODO
+#### 知识库配置
+
+![demo_knowledge](data/images/demo_knowledge.png)
+
+## TODOs
+
 - [X] 基本信息
-- [ ] 背景设定
+- [X] 背景设定
 - [ ] 性格、情绪
 
 ## 使用
@@ -39,7 +47,8 @@
     # 训练
     $ bash train_instruction.sh
     ```
-   从 [Google Drive](https://drive.google.com/file/d/1ZwVht3TVn4GDQ_oxuyQlVP09I7IUmnW6/view?usp=share_link) 下载已经训练的权重文件，放在 [ckpt](ckpt) 目录下，跳过此步骤。
+   从 [Google Drive](https://drive.google.com/file/d/1ZwVht3TVn4GDQ_oxuyQlVP09I7IUmnW6/view?usp=share_link)
+   下载已经训练的权重文件，放在 [ckpt](ckpt) 目录下，跳过此步骤。
 
 3. 运行
     ```shell
@@ -47,7 +56,7 @@
     ```
 
 4. 访问
-    <br> 浏览器直接打开 [http://127.0.0.1:7860](http://127.0.0.1:7860)
+   <br> 浏览器直接打开 [http://127.0.0.1:7860](http://127.0.0.1:7860)
 
 ## 硬件
 
@@ -67,3 +76,8 @@
 
 - 以上数据为单张RTX 3090显卡的测试结果
 - epoch: 50
+
+## 感谢
+
+- [ChatGLM-6B](https://github.com/THUDM/ChatGLM-6B) 提供基础模型
+- [langchain-ChatGLM](https://github.com/imClumsyPanda/langchain-ChatGLM) 提供知识库解决方案
