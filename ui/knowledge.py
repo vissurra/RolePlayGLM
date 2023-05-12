@@ -14,24 +14,33 @@ def show_content(knowledge):
 
 
 def upload_knowledge(knowledge, knowledge_new, knowledge_list, file):
-    if len(knowledge_new) > 0:
+    if len(knowledge_new) > 0 and knowledge_new not in knowledge_list:
         knowledge = knowledge_new
         knowledge_list.append(knowledge_new)
+        # sort
+        knowledge_list = knowledge_list[1:]
+        knowledge_list.sort()
+        knowledge_list = ['New'] + knowledge_list
 
     with open(file.name, mode='r', encoding='utf-8') as file:
         content = file.read()
     dump_knowledge(knowledge, content)
-    return knowledge, gr.update(value='', visible=False), knowledge_list, gr.update(value=None), content
+    return gr.update(choices=knowledge_list, value=knowledge), \
+        gr.update(value='', visible=False), \
+        knowledge_list, \
+        gr.update(value=None), \
+        content
 
 
 def ui():
     knowledge_list = list_knowledge()
+    knowledge_list = ['New'] + knowledge_list
     knowledge_list = gr.State(knowledge_list)
 
     with gr.Row():
         with gr.Column(scale=4):
-            knowledge = gr.Dropdown(knowledge_list.value, value=knowledge_list.value[0])
-            knowledge_new = gr.Textbox('', placeholder='New knowledge name', show_label=False)
+            knowledge = gr.Dropdown(knowledge_list.value, value=knowledge_list.value[0], label='Select knowledge')
+            knowledge_new = gr.Textbox('', placeholder='Input knowledge name', show_label=False)
             file = gr.File(file_types=['.txt'], show_label=False)
             upload_btn = gr.Button('Upload')
         with gr.Column(scale=10):

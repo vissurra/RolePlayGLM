@@ -1,11 +1,8 @@
-import os
-from glob import glob
-
 import gradio as gr
 import mdtex2html
 from loguru import logger
 
-from knowledge.base import query_knowledge
+from knowledge.base import query_knowledge, list_knowledge
 
 
 def postprocess(self, y):
@@ -25,9 +22,15 @@ gr.Chatbot.postprocess = postprocess
 model = None
 tokenizer = None
 
-paths = glob('data/content/*.txt')
-knowledge_list = [os.path.splitext(os.path.basename(path))[0] for path in paths]
-knowledge_list = gr.State(knowledge_list)
+knowledge_list = gr.State(list_knowledge())
+knowledge_default = knowledge_list.value[0] if len(knowledge_list.value) > 0 else None
+
+
+def refresh_knowledge(knowledge):
+    knowledge_list = list_knowledge()
+    if knowledge is None and len(knowledge_list) > 0:
+        knowledge = knowledge_list[0]
+    return gr.update(choices=knowledge_list, value=knowledge)
 
 
 def query_docs(knowledge, query):
@@ -116,6 +119,11 @@ def ui(input_model, input_tokenizer):
     tokenizer = input_tokenizer
 
     with gr.Row():
+        with gr.Column(scale=8):
+            knowledge = gr.Dropdown(knowledge_list.value, value=knowledge_default, label='Knowledge')
+        with gr.Column(scale=1):
+            refresh_btn = gr.Button('\U0001f504', variant='secondary').style(full_width=False, size='sm')
+    with gr.Row():
         with gr.Column(scale=4):
             name = gr.Textbox('Dio', label='Name', placeholder="Dio")
         with gr.Column(scale=4):
@@ -132,7 +140,9 @@ def ui(input_model, input_tokenizer):
             chatbot = gr.Chatbot().style(height=600)
         with gr.Column(scale=4):
             # chat_to = gr.Textbox("无敌的卖鱼强", label='Chat To', placeholder="无敌的卖鱼强")
-            knowledge = gr.Dropdown(knowledge_list.value, value=knowledge_list.value[0], label='Select knowledge')
+            with gr.Row():
+                knowledge = gr.Dropdown(knowledge_list.value, value=knowledge_default, label='Knowledge')
+                refresh_btn = gr.Button('Refresh')
             user_input = gr.Textbox(show_label=False, placeholder="Input...", lines=7)
             submit_btn = gr.Button("Submit", variant="primary")
             empty_btn = gr.Button("Clear History")
@@ -142,6 +152,7 @@ def ui(input_model, input_tokenizer):
 
     history = gr.State([])
     doc = gr.State('')
+    refresh_btn.click(refresh_knowledge, [knowledge], [knowledge])
     submit_btn.click(query_docs, [knowledge, user_input], [doc])
 
     submit_btn \

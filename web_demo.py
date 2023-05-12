@@ -23,7 +23,7 @@ def ui(model, tokenizer):
             chat.ui(model, tokenizer)
         with gr.Tab('Knowledge'):
             knowledge.ui()
-    demo.queue().launch(share=False, inbrowser=True, server_name='0.0.0.0')
+    demo.queue().launch(share=False, server_name='0.0.0.0')
 
 
 def main():
