@@ -48,8 +48,8 @@ def build_instruction(name, gender, birthday, creator, favorites, chat_to, doc, 
 创造者姓名:{creator}
 现在你正在和一个名叫"{chat_to}"的人聊天。
 明白了你就回复"明白了。
-
-还有一些其他的已知信息:{doc}"'''
+###
+还有一些已知信息:{doc}"'''
 
     init_history = [[
         instruction,
@@ -118,11 +118,6 @@ def ui(input_model, input_tokenizer):
     model = input_model
     tokenizer = input_tokenizer
 
-    with gr.Row():
-        with gr.Column(scale=8):
-            knowledge = gr.Dropdown(knowledge_list.value, value=knowledge_default, label='Knowledge')
-        with gr.Column(scale=1):
-            refresh_btn = gr.Button('\U0001f504', variant='secondary').style(full_width=False, size='sm')
     with gr.Row():
         with gr.Column(scale=4):
             name = gr.Textbox('Dio', label='Name', placeholder="Dio")
