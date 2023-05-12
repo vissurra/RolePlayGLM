@@ -20,8 +20,8 @@ embedding_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 embeddings = HuggingFaceEmbeddings(model_name=embedding_model_dict['text2vec'],
                                    model_kwargs={'device': embedding_device})
 
-chunk_size = 50
-chunk_overlap = 0
+chunk_size = 200
+chunk_overlap = 50
 
 
 def list_knowledge():
@@ -29,12 +29,6 @@ def list_knowledge():
     knowledge_list = [os.path.basename(path) for path in paths]
     knowledge_list.sort()
     return knowledge_list
-
-
-def load_knowledge(name):
-    content_path = f'{content_folder}/{name}.txt'
-    with open(content_path, mode='r', encoding='utf-8') as file:
-        return file.read()
 
 
 def dump_knowledge(name, content):
@@ -48,6 +42,17 @@ def dump_knowledge(name, content):
     docs = text_splitter.split_documents(documents)
     vs = FAISS.from_documents(docs, embeddings)
     vs.save_local(f'{knowledge_folder}/{name}')
+
+
+def load_knowledge(name):
+    vs = FAISS.load_local(f'{knowledge_folder}/{name}', embeddings)
+    return vs
+
+
+def load_knowledge_content(name):
+    content_path = f'{content_folder}/{name}.txt'
+    with open(content_path, mode='r', encoding='utf-8') as file:
+        return file.read()
 
 
 def query_knowledge(name, q, topk=1):

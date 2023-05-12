@@ -1,6 +1,6 @@
 import gradio as gr
 
-from knowledge.base import dump_knowledge, list_knowledge, load_knowledge
+from knowledge.base import dump_knowledge, list_knowledge, load_knowledge_content
 
 
 def show_content(knowledge):
@@ -9,7 +9,7 @@ def show_content(knowledge):
         content = ''
     else:
         visible = False
-        content = load_knowledge(knowledge)
+        content = load_knowledge_content(knowledge)
     return gr.update(value='', visible=visible), content
 
 

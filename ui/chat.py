@@ -2,7 +2,10 @@ import gradio as gr
 import mdtex2html
 from loguru import logger
 
-from knowledge.base import query_knowledge, list_knowledge
+from knowledge.base import list_knowledge, load_knowledge
+
+model = None
+tokenizer = None
 
 
 def postprocess(self, y):
@@ -19,12 +22,6 @@ def postprocess(self, y):
 
 gr.Chatbot.postprocess = postprocess
 
-model = None
-tokenizer = None
-
-knowledge_list = gr.State(list_knowledge())
-knowledge_default = knowledge_list.value[0] if len(knowledge_list.value) > 0 else None
-
 
 def refresh_knowledge(knowledge):
     knowledge_list = list_knowledge()
@@ -33,8 +30,10 @@ def refresh_knowledge(knowledge):
     return gr.update(choices=knowledge_list, value=knowledge)
 
 
-def query_docs(knowledge, query):
-    docs_and_scores = query_knowledge(knowledge, query)
+def query_docs(knowledge_vs, query):
+    if knowledge_vs is None:
+        return None
+    docs_and_scores = knowledge_vs.similarity_search_with_score(query, k=1)
     print(docs_and_scores)
     return docs_and_scores[0][0].page_content
 
@@ -47,18 +46,19 @@ def build_instruction(name, gender, birthday, creator, favorites, chat_to, doc, 
 兴趣爱好:{favorites}
 创造者姓名:{creator}
 现在你正在和一个名叫"{chat_to}"的人聊天。
-明白了你就回复"明白了。
-###
-还有一些已知信息:{doc}"'''
+明白了你就回复"明白了。'''
+    if doc is not None:
+        instruction += f'''\n###\n还有一些已知信息:{doc}"'''
 
     init_history = [[
         instruction,
         '明白了。'
     ]]
+    print(instruction)
 
-    if len(history) >= 6:
-        history = history[-5:]
-    history = init_history + history[1:]
+    if len(history) >= 3:
+        history = history[-3:]
+    history = init_history + history
     return history
 
 
@@ -118,6 +118,12 @@ def ui(input_model, input_tokenizer):
     model = input_model
     tokenizer = input_tokenizer
 
+    knowledge_list = gr.State(list_knowledge())
+    knowledge_default = knowledge_list.value[0] if len(knowledge_list.value) > 0 else None
+    knowledge_vs = gr.State(load_knowledge(knowledge_default) if knowledge_default else None)
+    related_doc = gr.State('')
+    history = gr.State([])
+
     with gr.Row():
         with gr.Column(scale=4):
             name = gr.Textbox('Dio', label='Name', placeholder="Dio")
@@ -145,19 +151,19 @@ def ui(input_model, input_tokenizer):
             top_p = gr.Slider(0, 1, value=0.7, step=0.01, label="Top P", interactive=True)
             temperature = gr.Slider(0, 1, value=0.95, step=0.01, label="Temperature", interactive=True)
 
-    history = gr.State([])
-    doc = gr.State('')
+    knowledge.change(load_knowledge, [knowledge], [knowledge_vs])
     refresh_btn.click(refresh_knowledge, [knowledge], [knowledge])
-    submit_btn.click(query_docs, [knowledge, user_input], [doc])
-
     submit_btn \
-        .click(build_instruction,
-               [name, gender, birthday, creator, favorites, creator, doc, history],
-               [history]) \
+        .click(query_docs,
+               [knowledge_vs, user_input],
+               [related_doc]) \
+        .then(build_instruction,
+              [name, gender, birthday, creator, favorites, creator, related_doc, history],
+              [history]) \
         .then(predict,
               [user_input, chatbot, max_length, top_p, temperature, history],
               [chatbot, history],
-              show_progress=True)
-    submit_btn.click(reset_user_input, [], [user_input])
+              show_progress=True) \
+        .then(reset_user_input, [], [user_input])
 
     empty_btn.click(reset_state, outputs=[chatbot, history], show_progress=True)
