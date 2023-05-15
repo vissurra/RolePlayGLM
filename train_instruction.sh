@@ -26,7 +26,7 @@ CUDA_VISIBLE_DEVICES=0 python3 chatglm_6b/ptuning/main.py \
     --predict_with_generate \
     --max_steps 100 \
     --logging_steps 10 \
-    --save_steps 50 \
+    --save_steps 10 \
     --learning_rate $LR \
     --pre_seq_len $PRE_SEQ_LEN \
     --quantization_bit 4
